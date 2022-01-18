@@ -17,12 +17,30 @@
         <dependency>
             <groupId>ru.tinkoff.invest</groupId>
             <artifactId>openapi-java-sdk-core</artifactId>
-            <version>0.4.1</version>
+            <version>0.5.1</version>
         </dependency>
         <dependency>
             <groupId>ru.tinkoff.invest</groupId>
             <artifactId>openapi-java-sdk-java8</artifactId>
-            <version>0.4.1</version>
+            <version>0.5.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.reactivex.rxjava3</groupId>
+            <artifactId>rxjava</artifactId>
+            <version>3.1.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.yahoofinance-api</groupId>
+            <artifactId>YahooFinanceAPI</artifactId>
+            <version>3.15.0</version>
+        </dependency>
+
+        <!-- Telegram ApiManager -->
+        <dependency>
+            <groupId>com.github.pengrad</groupId>
+            <artifactId>java-telegram-bot-api</artifactId>
+            <version>5.6.0</version>
         </dependency>
     </dependencies>
 
