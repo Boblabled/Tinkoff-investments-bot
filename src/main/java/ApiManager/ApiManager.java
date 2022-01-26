@@ -51,7 +51,7 @@ public class ApiManager {
         return api.getMarketContext().getMarketCandles(figi, openTime, closeTime, candleResolution).get().get().getCandles();
     }
 
-    public BigDecimal getCurrentPrise(String figi) throws ExecutionException, InterruptedException, IndexOutOfBoundsException {
+    public BigDecimal getCurrentPrice(String figi) throws ExecutionException, InterruptedException, IndexOutOfBoundsException {
         List<Candle> candle = getCandles(figi, OffsetDateTime.now().minusWeeks(1), OffsetDateTime.now(), DAY);
         return candle.get(candle.size()-1).getC();
     }
@@ -97,7 +97,7 @@ public class ApiManager {
                 // (среднняя в портфеле * колличество штук +  текущая прибыль/убыток) * курс валюты
                 ballance = ballance.add((pos.getAveragePositionPrice().getValue()
                         .multiply(pos.getBalance())).add(pos.getExpectedYield()
-                        .getValue())).multiply(getCurrentPrise(currency.get(stockCurrency)));
+                        .getValue())).multiply(getCurrentPrice(currency.get(stockCurrency)));
             }
         }
 

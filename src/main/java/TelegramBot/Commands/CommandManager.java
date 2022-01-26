@@ -32,11 +32,8 @@ public class CommandManager {
     private String commandsDescription() {
         StringBuilder message = new StringBuilder("Список доступных команд: ");
 
-        CommandBalance commandBalance = new CommandBalance(apiManager);
-        message.append("\n").append(commandBalance.description());
-
-        CommandPortfolio commandPortfolio = new CommandPortfolio(apiManager);
-        message.append("\n").append(commandPortfolio.description());
+        message.append("\n").append(new CommandBalance(apiManager).description());
+        message.append("\n").append(new CommandPortfolio(apiManager).description());
 
         return message.toString();
     }
