@@ -7,28 +7,9 @@ import java.util.concurrent.ExecutionException;
 public class Main {
     public static void main(String[] args) throws ExecutionException, InterruptedException {
         final ApiManager apiManager = new ApiManager(args[0], false);
-        final Portfolio portfolio = new Portfolio(apiManager, apiManager.getBrokerAccountId(), 10, 3);
+        //final Portfolio portfolio = new Portfolio(apiManager, apiManager.getBrokerAccountId(), 10, 3);
         final BotManager botManager = new BotManager(args[1], apiManager);
         botManager.run();
-
-        //api.getMarketContext().getMarketStocks().get().getInstruments().forEach(m -> System.out.println(m.toString()));
-
-        /*
-        final var stopNotifier = new CompletableFuture<Void>();
-        final Flowable<StreamingEvent> rxStreaming = Flowable.fromPublisher(apiManager.getApi().getStreamingContext());
-        final Disposable rxSubscription = rxStreaming
-                .doOnError(stopNotifier::completeExceptionally)
-                .doOnComplete(() -> stopNotifier.complete(null))
-                .forEach(event -> System.out.println("Пришло новое событие из Streaming API\n" + event));
-        String figi = apiManager.getApi().getMarketContext().searchMarketInstrumentsByTicker("IDCC").get().getInstruments().get(0).getFigi();
-        apiManager.getApi().getStreamingContext().sendRequest(StreamingRequest.subscribeInstrumentInfo(figi));
-        */
-
-        /*
-        api.getOrdersContext().placeMarketOrder("figi",
-                new MarketOrder(1, Operation.Sell),
-                api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get();
-         */
 
         /*
         //максмум 300 подписок

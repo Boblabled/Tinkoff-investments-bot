@@ -1,5 +1,7 @@
 package ApiManager;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.tinkoff.invest.openapi.OpenApi;
 import ru.tinkoff.invest.openapi.model.rest.*;
 import ru.tinkoff.invest.openapi.model.rest.Currency;
@@ -16,11 +18,27 @@ import static ru.tinkoff.invest.openapi.model.rest.CandleResolution.DAY;
 
 public class ApiManager {
     private final OpenApi api;
-    private final String brokerAccountId;
+    private String brokerAccountId = null;
+
+    private final Logger logger = LoggerFactory.getLogger(ApiManager.class);
 
     public ApiManager(String token, Boolean sandboxMode) throws ExecutionException, InterruptedException {
         this.api =  new OkHttpOpenApi(token, sandboxMode, Executors.newCachedThreadPool());
-        this.brokerAccountId = api.getUserContext().getAccounts().get().getAccounts().get(0).getBrokerAccountId();
+        logger.debug("Соединение с Tinkoff API установленно");
+
+        if (sandboxMode) {
+            api.getSandboxContext().performRegistration(new SandboxRegisterRequest());
+
+            //для тестов
+            setBalance(SandboxCurrency.RUB, 1000000);
+            setMarketOrder(getFigiByTicker("FIXP"), 5000, OperationType.BUY);
+        }
+
+        try {
+            this.brokerAccountId = api.getUserContext().getAccounts().get().getAccounts().get(0).getBrokerAccountId();
+        } catch (IndexOutOfBoundsException e) {
+            logger.error("Не найден брокерский счёт");
+        }
     }
 
     public List<PortfolioPosition> getPortfolioPositions() throws ExecutionException, InterruptedException {
@@ -48,7 +66,7 @@ public class ApiManager {
     }
 
     public List<Candle> getCandles(String figi, OffsetDateTime openTime, OffsetDateTime closeTime, CandleResolution candleResolution) throws ExecutionException, InterruptedException {
-        return api.getMarketContext().getMarketCandles(figi, openTime, closeTime, candleResolution).get().get().getCandles();
+        return Objects.requireNonNull(api.getMarketContext().getMarketCandles(figi, openTime, closeTime, candleResolution).get().orElse(null)).getCandles();
     }
 
     public BigDecimal getCurrentPrice(String figi) throws ExecutionException, InterruptedException, IndexOutOfBoundsException {
@@ -62,14 +80,13 @@ public class ApiManager {
         for (Currency currencyKey : Currency.values()) {
             if (currencyKey.equals(Currency.RUB)) {
                 currency.put(currencyKey, null);
-            }
-            else {
+            } else {
                 try {
                     String value = currencyList.stream().filter(c -> (c.getTicker().contains(currencyKey.getValue())))
                             .collect(Collectors.toList()).get(0).getFigi();
                     currency.put(currencyKey, value);
-                } catch (Exception e) {
-                    //TODO добавить exception
+                } catch (IndexOutOfBoundsException e) {
+                    logger.debug("{} валюта не найдена", currencyKey.getValue());
                 }
             }
         }
@@ -77,46 +94,75 @@ public class ApiManager {
         return currency;
     }
 
+    public String getFigiByTicker(String ticker) throws ExecutionException, InterruptedException {
+        return api.getMarketContext().searchMarketInstrumentsByTicker(ticker).get().getInstruments().get(0).getFigi();
+    }
+
+    public List<Order> getActiveOrders() throws ExecutionException, InterruptedException {
+        return api.getOrdersContext().getOrders(brokerAccountId).get();
+    }
+
     public BigDecimal getBalance() throws ExecutionException, InterruptedException {
-        BigDecimal ballance = new BigDecimal(0);
+        //делает всего 2 account request и 1 market request
+        BigDecimal balance = new BigDecimal(0);
         HashMap<Currency,String> currency = getCurrencyPrice();
         List<PortfolioPosition> positions = getPortfolioPositions();
 
         for (PortfolioPosition pos : positions) {
-            ru.tinkoff.invest.openapi.model.rest.Currency stockCurrency = pos.getAveragePositionPrice().getCurrency();
+            ru.tinkoff.invest.openapi.model.rest.Currency stockCurrency = ru.tinkoff.invest.openapi.model.rest.Currency.RUB;
+
+            stockCurrency = Objects.requireNonNull(pos.getAveragePositionPrice()).getCurrency();
 
             if (stockCurrency.equals(ru.tinkoff.invest.openapi.model.rest.Currency.RUB)) {
 
-                // среднняя в портфеле * колличество штук +  текущая прибыль/убыток
-                ballance = ballance.add(pos.getBalance().multiply(pos.getAveragePositionPrice()
+                // среднняя в портфеле * колличество штук + текущая прибыль/убыток
+                balance = balance.add(pos.getBalance().multiply(pos.getAveragePositionPrice()
                         .getValue())).add(pos.getExpectedYield().getValue());
             }
 
             else {
-
-                // (среднняя в портфеле * колличество штук +  текущая прибыль/убыток) * курс валюты
-                ballance = ballance.add((pos.getAveragePositionPrice().getValue()
-                        .multiply(pos.getBalance())).add(pos.getExpectedYield()
-                        .getValue())).multiply(getCurrentPrice(currency.get(stockCurrency)));
+                try {
+                    // (среднняя в портфеле * колличество штук +  текущая прибыль/убыток) * курс валюты
+                    balance = balance.add((pos.getAveragePositionPrice().getValue()
+                            .multiply(pos.getBalance())).add(pos.getExpectedYield()
+                            .getValue())).multiply(getCurrentPrice(currency.get(stockCurrency)));
+                } catch (NullPointerException e) {
+                    logger.error("Невозможно получить курс {}", stockCurrency);
+                }
             }
         }
 
-        List<CurrencyPosition> portfolioRub = getPortfolioCurrencies()
+        List<CurrencyPosition> rubBalance = getPortfolioCurrencies()
                 .stream().filter( p ->(p.getCurrency().equals(Currency.RUB))).collect(Collectors.toList());
 
         // свободный кэш в рублях (если есть)
-        if (!portfolioRub.isEmpty()) {
-            ballance = ballance.add(portfolioRub.get(0).getBalance());
+        if (!rubBalance.isEmpty()) {
+            balance = balance.add(rubBalance.get(0).getBalance());
         }
 
-        return ballance;
+        return balance;
     }
 
-    public OpenApi getApi() {
-        return api;
+    public void cancelOrder(String id) {
+        api.getOrdersContext().cancelOrder(id, brokerAccountId);
     }
 
-    public String getBrokerAccountId() {
-        return brokerAccountId;
+    public void setBalance(SandboxCurrency currency, float value) {
+        if (api.isSandboxMode()) {
+            SandboxSetCurrencyBalanceRequest request = new SandboxSetCurrencyBalanceRequest();
+            request.setCurrency(currency);
+            request.setBalance(new BigDecimal(value));
+            api.getSandboxContext().setCurrencyBalance(request, brokerAccountId);
+            logger.debug("Балланс установлен");
+        } else {
+            logger.debug("Это не sandboxMode");
+        }
+    }
+
+    public void setMarketOrder(String figi, int lots, OperationType operation) {
+        MarketOrderRequest request = new MarketOrderRequest();
+        request.setLots(lots);
+        request.setOperation(operation);
+        api.getOrdersContext().placeMarketOrder(figi, request, brokerAccountId);
     }
 }
