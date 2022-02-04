@@ -14,7 +14,7 @@
     </properties>
 
     <dependencies>
-        <!-- Тинькофф API -->
+        <!-- Тинькофф инвестиции API -->
         <dependency>
             <groupId>ru.tinkoff.invest</groupId>
             <artifactId>openapi-java-sdk-core</artifactId>
@@ -37,7 +37,7 @@
             <version>3.15.0</version>
         </dependency>
 
-        <!-- Telegram ApiManager -->
+        <!-- Telegram apiManager -->
         <dependency>
             <groupId>com.github.pengrad</groupId>
             <artifactId>java-telegram-bot-api</artifactId>
@@ -49,6 +49,13 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.2.10</version>
+        </dependency>
+
+        <!-- postgres driver -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.3.1</version>
         </dependency>
     </dependencies>
 

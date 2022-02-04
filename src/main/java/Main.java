@@ -1,14 +1,8 @@
-import ApiManager.ApiManager;
-import Portfolio.Portfolio;
 import TelegramBot.BotManager;
 
-import java.util.concurrent.ExecutionException;
-
 public class Main {
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
-        final ApiManager apiManager = new ApiManager(args[0], false);
-        //final Portfolio portfolio = new Portfolio(apiManager, apiManager.getBrokerAccountId(), 10, 3);
-        final BotManager botManager = new BotManager(args[1], apiManager);
+    public static void main(String[] args) {
+        BotManager botManager = new BotManager(args[1]);
         botManager.run();
 
         /*

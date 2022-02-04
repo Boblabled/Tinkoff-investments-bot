@@ -7,6 +7,7 @@ import ru.tinkoff.invest.openapi.model.rest.*;
 import ru.tinkoff.invest.openapi.model.rest.Currency;
 import ru.tinkoff.invest.openapi.okhttp.OkHttpOpenApi;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -20,25 +21,48 @@ public class ApiManager {
     private final OpenApi api;
     private String brokerAccountId = null;
 
-    private final Logger logger = LoggerFactory.getLogger(ApiManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(ApiManager.class);
 
-    public ApiManager(String token, Boolean sandboxMode) throws ExecutionException, InterruptedException {
-        this.api =  new OkHttpOpenApi(token, sandboxMode, Executors.newCachedThreadPool());
+    public ApiManager(String token, String brokerAccountId) throws ExecutionException, InterruptedException {
+        this.api =  new OkHttpOpenApi(token, false, Executors.newCachedThreadPool());
+        getMarketStocks();
+        this.brokerAccountId = brokerAccountId;
         logger.debug("Соединение с Tinkoff API установленно");
+    }
 
-        if (sandboxMode) {
-            api.getSandboxContext().performRegistration(new SandboxRegisterRequest());
-
-            //для тестов
-            setBalance(SandboxCurrency.RUB, 1000000);
-            setMarketOrder(getFigiByTicker("FIXP"), 5000, OperationType.BUY);
-        }
-
+    public static boolean checkToken(String token) {
+        OpenApi api = new OkHttpOpenApi(token, false, Executors.newCachedThreadPool());
         try {
-            this.brokerAccountId = api.getUserContext().getAccounts().get().getAccounts().get(0).getBrokerAccountId();
-        } catch (IndexOutOfBoundsException e) {
-            logger.error("Не найден брокерский счёт");
+            api.getMarketContext().getMarketStocks().get();
+        } catch (InterruptedException | ExecutionException | IllegalArgumentException e) {
+            logger.debug(e.getMessage());
+            return false;
+        } finally {
+            try {
+                api.close();
+            } catch (IOException e) {
+                logger.debug(e.getMessage());
+            }
         }
+        return true;
+    }
+
+    public static boolean checkBrokerAccount(String token, String brokerAccountId) {
+        OpenApi api = new OkHttpOpenApi(token, false, Executors.newCachedThreadPool());
+        List<UserAccount> accounts = null;
+        try {
+            accounts = api.getUserContext().getAccounts().get().getAccounts().stream()
+                    .filter(account -> account.getBrokerAccountId().equals(brokerAccountId)).collect(Collectors.toList());
+            return !accounts.isEmpty();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.debug(e.getMessage());
+            return false;
+        }
+    }
+
+    public static List<UserAccount> getBrokerAccounts(String token) throws InterruptedException, ExecutionException, IllegalArgumentException {
+        OpenApi api = new OkHttpOpenApi(token, false, Executors.newCachedThreadPool());
+        return api.getUserContext().getAccounts().get().getAccounts();
     }
 
     public List<PortfolioPosition> getPortfolioPositions() throws ExecutionException, InterruptedException {
@@ -139,7 +163,7 @@ public class ApiManager {
         if (!rubBalance.isEmpty()) {
             balance = balance.add(rubBalance.get(0).getBalance());
         }
-
+        System.out.println(balance.floatValue());
         return balance;
     }
 
