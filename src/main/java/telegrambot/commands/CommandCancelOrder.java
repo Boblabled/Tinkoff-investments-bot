@@ -1,8 +1,8 @@
-package TelegramBot.Commands;
+package telegrambot.commands;
 
-import ApiManager.ApiManager;
+import telegrambot.apimanager.ApiManager;
 
-public class CommandCancelOrder extends Command{
+public class CommandCancelOrder implements Command{
 
     private ApiManager apiManager;
 
@@ -18,6 +18,6 @@ public class CommandCancelOrder extends Command{
     @Override
     public String execute() {
         //TODO сперва надо завести базу данных
-        return null;
+        return "null";
     }
 }

@@ -1,7 +1,7 @@
-package TelegramBot.DbManager;
+package telegrambot.dbmanager;
 
-import TelegramBot.User.ProcessMode;
-import TelegramBot.User.User;
+import telegrambot.user.ProcessMode;
+import telegrambot.user.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,7 +1,7 @@
-package TelegramBot;
+package telegrambot;
 
-import TelegramBot.Commands.CommandManager;
-import TelegramBot.DbManager.DbManager;
+import telegrambot.commands.CommandManager;
+import telegrambot.dbmanager.DbManager;
 
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
@@ -29,7 +29,7 @@ public class BotManager {
 
     public void run() {
         dbManager.connect();
-        //dbManager.createUsersTable();
+        dbManager.createUsersTable();
         logger.info("Бот успешно запустился");
         bot.setUpdatesListener(updates -> {
             updates.forEach(this::process);

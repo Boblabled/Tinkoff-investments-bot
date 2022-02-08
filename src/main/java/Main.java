@@ -1,8 +1,8 @@
-import TelegramBot.BotManager;
+import telegrambot.BotManager;
 
 public class Main {
     public static void main(String[] args) {
-        BotManager botManager = new BotManager(args[1]);
+        var botManager = new BotManager(args[1]);
         botManager.run();
 
         /*

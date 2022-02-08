@@ -1,6 +1,6 @@
-package Strategy;
+package strategy;
 
-import Portfolio.Portfolio;
+import portfolio.Portfolio;
 
 public abstract class Strategy {
     private String token;

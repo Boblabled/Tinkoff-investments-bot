@@ -1,19 +1,20 @@
-package TelegramBot.Commands;
+package telegrambot.commands;
 
-import ApiManager.ApiManager;
+import telegrambot.apimanager.ApiManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.tinkoff.invest.openapi.model.rest.MarketInstrument;
 import ru.tinkoff.invest.openapi.model.rest.OperationType;
 import ru.tinkoff.invest.openapi.model.rest.Order;
 import ru.tinkoff.invest.openapi.model.rest.OrderType;
+import telegrambot.commands.exceptions.*;
 
 import java.math.RoundingMode;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-public class CommandOrders extends Command{
+public class CommandOrders implements Command{
 
     private final ApiManager apiManager;
     private final Logger logger = LoggerFactory.getLogger(CommandOrders.class);
@@ -39,16 +40,13 @@ public class CommandOrders extends Command{
             apiManager.getActiveOrders().forEach(order -> {
                message.append(format(order, instruments));
            });
-        } catch (ExecutionException e) {
-            if (e.getMessage().contains("Unknown account")) {
-                logger.error("У пользователя нет счёта");
-                return "У вас нету брокерского счёта";
+        } catch (ExecutionException | InterruptedException e) {
+            try {
+                return ExceptionManager.check(e);
+            } catch (InvalidBrokerAccountIdException | ExceededRequestLimitException | DeadTokenException | LostApiConnectionException ex) {
+                logger.warn(ex.logMessage());
+                return ex.getMessage();
             }
-            logger.warn("Превышен лимит запросов");
-            return "Превышен лимит запросов";
-        } catch (InterruptedException e) {
-            logger.error("Соединение с Tinkoff API прервано");
-            return "Соединение прервано";
         }
 
         if (message.toString().equals("")) {

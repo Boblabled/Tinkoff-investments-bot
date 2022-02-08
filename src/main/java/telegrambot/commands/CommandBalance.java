@@ -1,13 +1,14 @@
-package TelegramBot.Commands;
+package telegrambot.commands;
 
-import ApiManager.ApiManager;
+import telegrambot.apimanager.ApiManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import telegrambot.commands.exceptions.*;
 
 import java.math.RoundingMode;
 import java.util.concurrent.ExecutionException;
 
-public class CommandBalance extends Command {
+public class CommandBalance implements Command {
 
     private final ApiManager apiManager;
 
@@ -27,16 +28,13 @@ public class CommandBalance extends Command {
     public String execute() {
         try {
             return "<i>Ваш текущий балланс по портфелю: </i><code>" + apiManager.getBalance().setScale(2, RoundingMode.UP) + "</code> RUB";
-        } catch (ExecutionException e) {
-            if (e.getMessage().contains("Unknown account")) {
-                logger.error("У пользователя нет счёта");
-                return "У вас нету брокерского счёта";
+        } catch (ExecutionException | InterruptedException e) {
+            try {
+                return ExceptionManager.check(e);
+            } catch (InvalidBrokerAccountIdException | ExceededRequestLimitException | DeadTokenException | LostApiConnectionException ex) {
+                logger.warn(ex.logMessage());
+                return ex.getMessage();
             }
-            logger.warn("Превышен лимит запросов");
-            return "Превышен лимит запросов";
-        } catch (InterruptedException e) {
-            logger.error("Соединение с Tinkoff API прервано");
-            return "Соединение прервано";
         }
     }
 }

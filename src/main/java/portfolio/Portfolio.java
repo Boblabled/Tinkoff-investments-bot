@@ -1,6 +1,6 @@
-package Portfolio;
+package portfolio;
 
-import ApiManager.ApiManager;
+import telegrambot.apimanager.ApiManager;
 import ru.tinkoff.invest.openapi.model.rest.Currency;
 import ru.tinkoff.invest.openapi.model.rest.*;
 

@@ -1,15 +1,19 @@
-package TelegramBot.Commands;
+package telegrambot.commands;
 
-import ApiManager.ApiManager;
-import TelegramBot.DbManager.DbManager;
-import TelegramBot.User.ProcessMode;
-import TelegramBot.User.User;
+import telegrambot.apimanager.ApiManager;
+import telegrambot.commands.exceptions.*;
+import telegrambot.dbmanager.DbManager;
+import telegrambot.user.ProcessMode;
+import telegrambot.user.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutionException;
 
 public class CommandManager {
 
     private final DbManager dbManager;
+    public final Logger logger = LoggerFactory.getLogger(CommandManager.class);
 
     public CommandManager(DbManager dbManager) {
         this.dbManager = dbManager;
@@ -33,12 +37,19 @@ public class CommandManager {
             case DEFAULT -> {
                 return defaultExecution(message, user);
             }
-            case COMMANDCANCELORDER -> {
+            case COMMAND_CANCEL_ORDER -> {
+                //TODO
                 return "";
+            }
+            case TOKEN_UPDATE -> {
+                //TODO
+                return " ";
             }
         }
         return "Таки не понимаю я вас";
     }
+
+
 
     public String startExecution(String message, Long chatId) {
         CommandStart commandStart = new CommandStart(dbManager, chatId, message);
@@ -46,15 +57,19 @@ public class CommandManager {
     }
 
     public String defaultExecution(String message, User user) {
-
-        //TODO проверка токена
-        ApiManager apiManager = null;
+        ApiManager apiManager;
         try {
             apiManager = new ApiManager(user.getToken(), user.getBrokerAccountId());
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        } catch (InterruptedException | ExecutionException e) {
+            try {
+                return ExceptionManager.check(e);
+            } catch (InvalidBrokerAccountIdException | ExceededRequestLimitException | DeadTokenException | LostApiConnectionException ex) {
+                logger.warn(ex.logMessage());
+                if (ex instanceof DeadTokenException) {
+                    dbManager.updateUserField(user.chatId(), "processMode", String.valueOf(ProcessMode.TOKEN_UPDATE));
+                }
+                return ex.getMessage();
+            }
         }
 
         switch (message) {
@@ -62,15 +77,15 @@ public class CommandManager {
                 return commandsDescription();
             }
             case "/balance" -> {
-                CommandBalance commandBalance = new CommandBalance(apiManager);
+                var commandBalance = new CommandBalance(apiManager);
                 return commandBalance.execute();
             }
             case "/portfolio" -> {
-                CommandPortfolio commandPortfolio = new CommandPortfolio(apiManager);
+                var commandPortfolio = new CommandPortfolio(apiManager);
                 return commandPortfolio.execute();
             }
             case "/orders" -> {
-                CommandOrders commandOrders = new CommandOrders(apiManager);
+                var commandOrders = new CommandOrders(apiManager);
                 return commandOrders.execute();
             }
             default -> {

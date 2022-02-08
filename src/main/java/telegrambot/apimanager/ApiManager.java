@@ -1,4 +1,4 @@
-package ApiManager;
+package telegrambot.apimanager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,7 @@ public class ApiManager {
     private static final Logger logger = LoggerFactory.getLogger(ApiManager.class);
 
     public ApiManager(String token, String brokerAccountId) throws ExecutionException, InterruptedException {
-        this.api =  new OkHttpOpenApi(token, false, Executors.newCachedThreadPool());
+        this.api = new OkHttpOpenApi(token, false, Executors.newCachedThreadPool());
         getMarketStocks();
         this.brokerAccountId = brokerAccountId;
         logger.debug("Соединение с Tinkoff API установленно");
@@ -133,7 +133,7 @@ public class ApiManager {
         List<PortfolioPosition> positions = getPortfolioPositions();
 
         for (PortfolioPosition pos : positions) {
-            ru.tinkoff.invest.openapi.model.rest.Currency stockCurrency = ru.tinkoff.invest.openapi.model.rest.Currency.RUB;
+            ru.tinkoff.invest.openapi.model.rest.Currency stockCurrency;
 
             stockCurrency = Objects.requireNonNull(pos.getAveragePositionPrice()).getCurrency();
 

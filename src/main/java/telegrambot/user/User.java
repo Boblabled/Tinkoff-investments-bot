@@ -1,4 +1,4 @@
-package TelegramBot.User;
+package telegrambot.user;
 
 public record User(Long chatId, String token, String brokerAccountId,
                    ProcessMode processMode) {
