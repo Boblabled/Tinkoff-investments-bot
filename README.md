@@ -1,2 +1,2 @@
-# Trader_bot
+# Tinkoff_Investments_Bot
 Займусь этим летом.
